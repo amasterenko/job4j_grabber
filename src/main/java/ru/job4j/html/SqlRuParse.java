@@ -20,7 +20,7 @@ public class SqlRuParse {
             System.out.println(href.attr("href"));
             System.out.println(href.text());
             href = rowDate.get(1 + 2 * indx++);
-            System.out.println(href.text());
+            System.out.println(DateParse.strToTimestamp(href.text()));
         }
     }
 }
