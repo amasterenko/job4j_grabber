@@ -5,11 +5,11 @@ import java.util.List;
 
 public class Post {
     private String name;
-    private List<String> content;
+    private String content;
     private String source;
     private Timestamp created;
 
-    public Post(String name, List<String> content, String source, Timestamp created) {
+    public Post(String name, String content, String source, Timestamp created) {
         this.name = name;
         this.content = content;
         this.source = source;
@@ -20,7 +20,7 @@ public class Post {
         return name;
     }
 
-    public List<String> getContent() {
+    public String getContent() {
         return content;
     }
 
