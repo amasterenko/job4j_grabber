@@ -31,4 +31,14 @@ public class Post {
     public Timestamp getCreated() {
         return created;
     }
+
+    @Override
+    public String toString() {
+        return "{"
+                + "\nname: '" + name + '\''
+                + "\ncontent:\n" + content
+                + "\nsource: '" + source + '\''
+                + "\ncreated: " + created
+                + "\n}";
+    }
 }
