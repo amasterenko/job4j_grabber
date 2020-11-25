@@ -86,8 +86,7 @@ public class SqlRuParse implements Parse {
                     .get();
             return new Post(getMsgHeader(doc), getMsgText(doc), link, getMsgDate(doc));
         } catch (IOException e) {
-            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 }
