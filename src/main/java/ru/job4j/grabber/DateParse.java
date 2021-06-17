@@ -1,5 +1,8 @@
 package ru.job4j.grabber;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.DateFormatSymbols;
@@ -14,6 +17,8 @@ public class DateParse {
                     "июл", "авг", "сен", "окт", "ноя", "дек"};
         }
     };
+
+    private static final Logger LOG = LoggerFactory.getLogger(DateParse.class);
 
     public static Timestamp strToTimestamp(String inputDate)
             throws IllegalArgumentException {
@@ -30,8 +35,8 @@ public class DateParse {
             SimpleDateFormat input = new SimpleDateFormat("dd MMMM yy H:mm", SQL_RU_MONTHS);
             return new Timestamp(input.parse(dateTime[0] + dateTime[1]).getTime());
         } catch (Exception e) {
+            LOG.error("Exception", e);
             throw new IllegalArgumentException(e);
         }
-
     }
 }

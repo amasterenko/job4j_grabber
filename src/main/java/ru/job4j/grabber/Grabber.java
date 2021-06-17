@@ -2,10 +2,14 @@ package ru.job4j.grabber;
 
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Properties;
 
 import static org.quartz.JobBuilder.newJob;
@@ -19,6 +23,10 @@ public class Grabber implements Grab {
         return new PsqlStore(cfg);
     }
 
+    public Output webSrv() {
+        return new WebServer(cfg);
+    }
+
     public Scheduler scheduler() throws SchedulerException {
         Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
         scheduler.start();
@@ -26,7 +34,7 @@ public class Grabber implements Grab {
     }
 
     public void cfg() throws IOException {
-        try (InputStream in = new FileInputStream(new File("src/main/resources/app.properties"))) {
+        try (InputStream in = new FileInputStream("src/main/resources/app.properties")) {
             cfg.load(in);
         }
     }
@@ -36,11 +44,13 @@ public class Grabber implements Grab {
         JobDataMap data = new JobDataMap();
         data.put("store", store);
         data.put("parse", parse);
+        data.put("pages", Integer.parseInt(cfg.getProperty("pages.depth")));
+        data.put("url", cfg.getProperty("start.url"));
         JobDetail job = newJob(GrabJob.class)
                 .usingJobData(data)
                 .build();
         SimpleScheduleBuilder times = simpleSchedule()
-                .withIntervalInSeconds(Integer.parseInt(cfg.getProperty("interval")))
+                .withIntervalInSeconds(Integer.parseInt(cfg.getProperty("job.interval")))
                 .repeatForever();
         Trigger trigger = newTrigger()
                 .startNow()
@@ -54,34 +64,14 @@ public class Grabber implements Grab {
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
             JobDataMap map = context.getJobDetail().getJobDataMap();
+            int numOfPages = map.getInt("pages");
+            String url = map.getString("url");
             Store store = (Store) map.get("store");
             Parse parse = (Parse) map.get("parse");
-            for (int i = 1; i <= 5; i++) {
-                parse.list("https://www.sql.ru/forum/job-offers/" + i).forEach(store::save);
+            for (int i = 1; i <= numOfPages; i++) {
+                parse.list(url + i).forEach(store::save);
             }
         }
-    }
-
-    public void web(Store store) {
-        new Thread(() -> {
-            try (ServerSocket server = new ServerSocket(
-                    Integer.parseInt(cfg.getProperty("webserver.port")))) {
-                while (!server.isClosed()) {
-                    Socket socket = server.accept();
-                    try (OutputStream out = socket.getOutputStream()) {
-                        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
-                        for (Post post : store.getAll()) {
-                            out.write(post.toString().getBytes());
-                            out.write(System.lineSeparator().getBytes());
-                        }
-                    } catch (IOException io) {
-                        io.printStackTrace();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     public static void main(String[] args) throws Exception {
@@ -89,7 +79,8 @@ public class Grabber implements Grab {
         grab.cfg();
         Scheduler scheduler = grab.scheduler();
         Store store = grab.store();
+        Output webSrv = grab.webSrv();
         grab.init(new SqlRuParse(), store, scheduler);
-        grab.web(store);
+        webSrv.start(store);
     }
 }

@@ -1,5 +1,8 @@
 package ru.job4j.grabber;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
@@ -8,8 +11,8 @@ import java.util.List;
 import java.util.Properties;
 
 public class PsqlStore implements Store, AutoCloseable {
-
-    private Connection cnn;
+    private static final Logger LOG = LoggerFactory.getLogger(PsqlStore.class);
+    private final Connection cnn;
 
     public PsqlStore(Properties cfg) {
         try {
@@ -20,6 +23,7 @@ public class PsqlStore implements Store, AutoCloseable {
                     cfg.getProperty("jdbc.password")
             );
         } catch (Exception e) {
+            LOG.error("Exception", e);
             throw new IllegalStateException(e);
         }
     }
@@ -35,14 +39,15 @@ public class PsqlStore implements Store, AutoCloseable {
             ps.setTimestamp(4, post.getCreated());
             ps.executeUpdate();
         } catch (SQLException e) {
-            //e.printStackTrace();
+            LOG.error("Exception", e);
         }
     }
 
     @Override
     public List<Post> getAll() {
         List<Post> outputList = new ArrayList<>();
-        try (PreparedStatement ps = cnn.prepareStatement("SELECT * FROM post")) {
+        try (PreparedStatement ps = cnn.prepareStatement(
+                "SELECT * FROM post ORDER BY created DESC")) {
             ResultSet set = ps.executeQuery();
             while (set.next()) {
                 Post post = new Post(
@@ -53,7 +58,7 @@ public class PsqlStore implements Store, AutoCloseable {
                 outputList.add(post);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
         }
         return outputList;
     }
@@ -72,7 +77,7 @@ public class PsqlStore implements Store, AutoCloseable {
                                 set.getTimestamp("created"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
         }
         return resultPost;
     }
@@ -81,32 +86,6 @@ public class PsqlStore implements Store, AutoCloseable {
     public void close() throws Exception {
         if (cnn != null) {
             cnn.close();
-        }
-    }
-
-    public static void main(String[] args) throws IOException {
-        try (InputStream in = PsqlStore.class.getClassLoader()
-                            .getResourceAsStream("app.properties")) {
-            Properties config = new Properties();
-            config.load(in);
-            PsqlStore store = new PsqlStore(config);
-            Post post1 = new Post(
-                            "post1",
-                            "text of the post1",
-                            "http://www.ya.ru",
-                                    new Timestamp(System.currentTimeMillis())
-            );
-            Post post2 = new Post(
-                    "post2",
-                    "text of the post2",
-                    "http://www.rbc.ru",
-                    new Timestamp(System.currentTimeMillis())
-            );
-            store.save(post1);
-            store.save(post2);
-            System.out.println(store.findById(1));
-            store.getAll().forEach(System.out::println);
-
         }
     }
 }

@@ -34,11 +34,11 @@ public class Post {
 
     @Override
     public String toString() {
-        return "{"
-                + "\nname: '" + name + '\''
-                + "\ncontent:\n" + content
-                + "\nsource: '" + source + '\''
-                + "\ncreated: " + created
-                + "\n}";
+        String sep = System.lineSeparator();
+        return  "{" + "Source: '" + source + '\''
+                + sep + "Created: " + created
+                + sep + "Title: '" + name + '\''
+                + sep + "Content:" + sep + content
+                + "}";
     }
 }
