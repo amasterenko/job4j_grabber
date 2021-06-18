@@ -18,7 +18,7 @@ It searches topics with Java Developer vacancies, parses them and saves to the d
 
 * Job schedule  
 * Parsing and filtering the web-pages  
-* Simple Socket Server for providing the parsed vacancies via HTTP  
+* Simple Socket Server to provide the parsed vacancies via HTTP  
 
 #### Usage  
 
